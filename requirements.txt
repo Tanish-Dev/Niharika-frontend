@@ -7,3 +7,10 @@ Pillow==10.1.0
 # torch==2.1.0
 # scikit-learn==1.3.2
 # numpy==1.26.2
+
+# Required for TFLite inference
+# On Linux/RPi you can install the lightweight runtime:
+# tflite-runtime (preferred) — example for pip: `pip install tflite-runtime`
+# On Windows use the full TensorFlow package (tflite-runtime is not officially provided for Windows):
+# tensorflow==2.15.0
+numpy==1.26.2

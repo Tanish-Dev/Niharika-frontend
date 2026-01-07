@@ -17,16 +17,21 @@ const newScanBtn = document.getElementById('newScanBtn');
 
 let selectedFile = null;
 
+// Logging helper
+function log(...args) {
+    if (console && console.debug) console.debug('[App]', ...args);
+}
+
 // Menu Button Handler
 menuBtn.addEventListener('click', () => {
     menuBtn.classList.toggle('active');
-    // Add your menu functionality here
-    alert('Menu options:\n• Settings\n• Profile\n• Help\n• About');
+    log('Menu toggled');
 });
 
 // Event Listeners
 uploadCard.addEventListener('click', () => {
     uploadArea.scrollIntoView({ behavior: 'smooth' });
+    log('Upload card clicked');
 });
 
 historyCard.addEventListener('click', () => {
@@ -84,6 +89,7 @@ newScanBtn.addEventListener('click', () => {
 
 // Functions
 function handleFileSelect(file) {
+    log('File selected', file.name, file.type, file.size);
     if (!file.type.startsWith('image/')) {
         alert('Please select an image file');
         return;
@@ -101,6 +107,7 @@ function handleFileSelect(file) {
         imagePreview.src = e.target.result;
         uploadArea.style.display = 'none';
         previewSection.style.display = 'block';
+        log('Preview displayed');
     };
     reader.readAsDataURL(file);
 }
@@ -111,21 +118,26 @@ function resetUpload() {
     imagePreview.src = '';
     previewSection.style.display = 'none';
     uploadArea.style.display = 'block';
+    log('Upload reset');
 }
 
 function resetAll() {
     resetUpload();
-    uploadSection.style.display = 'none';
+    uploadSection.style.display = 'block';
     resultsSection.style.display = 'none';
     document.querySelector('.welcome-section').style.display = 'block';
     document.querySelector('.action-cards').style.display = 'grid';
+    log('Reset to start');
 }
 
-asynresultsSection.style.display = 'none';
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+async function analyzeScan() {
+    if (!selectedFile) {
+        alert('Please select an image first');
+        return;
     }
 
-    // Show loading
+    // Scroll to top, show loading
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     previewSection.style.display = 'none';
     loading.style.display = 'block';
 
@@ -133,17 +145,19 @@ asynresultsSection.style.display = 'none';
     formData.append('image', selectedFile);
 
     try {
+        log('Uploading image for analysis', selectedFile.name);
         const response = await fetch('/analyze', {
             method: 'POST',
             body: formData
         });
 
         const data = await response.json();
+        log('Server response', data);
 
         // Hide loading
         loading.style.display = 'none';
 
-        if (data.status === 'success') {
+        if (data.status === 'success' && data.analysis) {
             displayResults(data.analysis);
         } else {
             alert('Error: ' + (data.error || 'Analysis failed'));
@@ -158,24 +172,22 @@ asynresultsSection.style.display = 'none';
 }
 
 function displayResults(analysis) {
+    const confidencePct = (analysis.confidence * 100).toFixed(1);
+    const label = analysis.diagnosis || analysis.top_label || `Class ${analysis.top_index}`;
+
     resultContent.innerHTML = `
         <div class="result-item">
-            <div class="result-label">Status</div>
-            <div class="result-value">${analysis.result}</div>
+            <div class="result-label">Result</div>
+            <div class="result-value">${label}</div>
         </div>
         <div class="result-item">
             <div class="result-label">Confidence</div>
-            <div class="result-value">${(analysis.confidence * 100).toFixed(1)}%</div>
-        </div>
-        <div class="result-item">
-            <div class="result-label">Note</div>
-            <div class="result-value" style="font-size: 14px; font-weight: 400;">
-                Model integration pending. This is a placeholder result.
-            </div>
+            <div class="result-value">${confidencePct}%</div>
         </div>
     `;
 
     resultsSection.style.display = 'block';
+    log('Displayed results', analysis.top_index, label, analysis.confidence);
 }
 
 function showGuidelines() {
